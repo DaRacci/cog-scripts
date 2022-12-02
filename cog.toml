@@ -1,0 +1,19 @@
+tag_prefix = "v"
+branch_whitelist = [ "master" ]
+
+[commit_types]
+format = { changelog_title = "Formatting" }
+
+
+[changelog]
+path = "CHANGELOG.md"
+template = "remote"
+remote = "github.com"
+repository = "cog-scripts"
+owner = "DaRacci"
+authors = [
+    { signature = "Racci", username = "DaRacci" },
+    { signature = "DaRacci", username = "DaRacci" }
+]
+
+
