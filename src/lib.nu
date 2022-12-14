@@ -1,6 +1,5 @@
 export def error [
     msg: string,
-    dry: bool
     err?: string,
 ] {
     if $err != null {
@@ -12,7 +11,7 @@ export def error [
         print $"(ansi red_bold)($msg); Error: (ansi reset)unknown error"
     }
 
-    if $dry == false {
+    if not (is_dry) {
         exit 1
     }
 }
@@ -23,17 +22,32 @@ export def dry [
     print $"(ansi yellow_bold)DRY RUN: (ansi green)($cmd)"
 }
 
-export def maybe_dry [dry: bool, cmd: string] {
-    if $dry == true {
+export def maybe_dry [cmd: string] {
+    if (is_dry) {
         dry $cmd
     } else {
         nu -c $cmd
     }
 }
 
-export def version_check [$dry: bool, pre_ver: string, next_ver: string] {
+export def version_check [pre_ver: string, next_ver: string] {
     if $pre_ver == $next_ver {
-        error "Version is the same" $"($pre_ver) == ($next_ver)" $dry
+        error "Version is the same" $"($pre_ver) == ($next_ver)"
     }
 }
 
+export def env_def [env_str: string, default: any] {
+    if not ($env_str in (env).name) {
+        return $default
+    } else {
+        return ($env | get $env_str)
+    }
+}
+
+export def is_dry [] {
+    return (env_def "DRY" false)
+}
+
+export def is_debug [] {
+    return (env_def "DEBUG" false)
+}

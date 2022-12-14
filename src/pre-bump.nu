@@ -2,27 +2,29 @@
 
 use lib.nu
 
-def gradle_check [dry: bool] {
+def gradle_check [] {
     try {
         ./gradlew clean check -q
     } catch {|err|
-        lib error "Gradle check failed" $err $dry
+        lib error "Gradle check failed" $err
     }
 }
 
-def update_ver [dry: bool, ver: string] {
-    lib maybe_dry $dry $"sd \"version=.*\" \"version=($ver)\" gradle.properties"
-    lib maybe_dry $dry "git add gradle.properties"
+def update_ver [ver: string] {
+    lib maybe_dry $"sd \"version=.*\" \"version=($ver)\" gradle.properties"
+    lib maybe_dry "git add gradle.properties"
 }
 
 def main [
     pre_ver: string                 # The current version.
     next_ver: string                # The version being bumped to.
     --dry (-d)                      # If present, dry runs and prints the commands that would run.
+    --debug (-D)                    # If present, prints debug information.
 ] {
-    lib version_check $dry $pre_ver $next_ver
-    gradle_check $dry
-    update_ver $dry $next_ver
-    lib maybe_dry $dry $"./gradlew build -q -Pversion=\"v($next_ver)\""
+    with-env [DRY $dry DEBUG $debug] {
+        lib version_check $pre_ver $next_ver
+        gradle_check
+        update_ver $next_ver
+    }
 }
 
