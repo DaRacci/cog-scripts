@@ -1,12 +1,16 @@
 export def error [
     msg: string,
-    err: string,
     dry: bool
+    err?: string,
 ] {
-    $err
-    | lines
-    | str replace 'error: ' ''
-    | each {|err| print $"(ansi red_bold)($msg); Error: (ansi reset)($err)" }
+    if $err != null {
+        $err
+        | lines
+        | str replace 'error: ' ''
+        | each {|err| print $"(ansi red_bold)($msg); Error: (ansi reset)($err)" }
+    } else {
+        print $"(ansi red_bold)($msg); Error: (ansi reset)unknown error"
+    }
 
     if $dry == false {
         exit 1
