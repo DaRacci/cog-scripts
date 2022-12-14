@@ -25,6 +25,7 @@ def main [
         lib version_check $pre_ver $next_ver
         gradle_check
         update_ver $next_ver
+        lib maybe_dry $"./gradlew build -q -Pversion=\"($next_ver)\""
     }
 }
 
