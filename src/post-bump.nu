@@ -2,22 +2,24 @@
 
 use lib.nu
 
-    let maybe_git_res = (do -i {
+def git_push [ver: string] {
+    mut completed = false
+    let maybe_git_res = (try {
         lib maybe_dry "git push"
         lib maybe_dry $"git push origin \"v($ver)\""
         lib maybe_dry "git fetch --tags origin"
+        $completed = true
     })
 
-        let git_res = ($maybe_git_res | complete).stderr
-        if $git_res != "" {
     if not (lib is_dry) {
+        if not $completed {
             lib error "Git push failed"
         }
     }
 }
 
-    let changelog = (do -i { cog changelog v($pre_ver)..v($next_ver) } | complete)
 def changelog [pre_ver: string, next_ver: string] {
+    let changelog = (do -i { cog changelog $"v($pre_ver)..v($next_ver)" } | complete)
 
     if (lib is_dry) {
         lib dry $"cog changelog v($pre_ver)..v($next_ver) -> (($changelog).stdout)"
@@ -30,13 +32,8 @@ def changelog [pre_ver: string, next_ver: string] {
     return $changelog
 }
 
-    lib maybe_dry $dry $"\"(($changelog).stdout)\" |
-        gh release create \\
-            \"v($ver)\" \\
-            -F - -t \\
-            \"($name) release ($ver)\" \\
-            \"build/libs/($name)-($ver).jar"
 def gh_release [name: string, ver: string, changelog: string] {
+    lib maybe_dry $"\"`(($changelog).stdout | str trim)` | gh release create \"v($ver)\" -F - -t \"($name) release ($ver)\" \"build/libs/($name)-($ver).jar\"\""
 }
 
 def gh_workflow [workflow: string] {
@@ -50,7 +47,9 @@ def gradle_publish [sub: string] {
 
 def enter_snapshot [ver: string] {
     lib maybe_dry $"sd \"version=.*\" \"version=($ver)\" gradle.properties"
+    lib maybe_dry "git add ./gradle.properties"
     lib maybe_dry "cog commit chore \"enter snapshot\" deps --sign"
+    lib maybe_dry "git push"
 }
 
 def main [
@@ -64,18 +63,21 @@ def main [
     --conventions (-c)              # If present updates the version in Minix-Conventions
     --dry (-d)                      # If present, dry runs and prints the commands that would run.
     --debug (-D)                    # If present, prints the commands are being ran.
+    --workflows (-w): list          # If present, runs these workflows when releasing.
 ] {
     with-env [DEBUG $debug DRY $dry] {
         lib version_check $pre_ver $next_ver
+
+        git_push $next_ver
         let changelog = changelog $pre_ver $next_ver
+
         if $release {
+            try { gh_release $name $next_ver $changelog }
+            $workflows | each {|workflow| try { gh_workflow $workflow } }
             $projects | each {|sub| gradle_publish $sub }
 
-    git_push $dry $next_ver
             enter_snapshot $snap_ver
 
-        gh_release $dry $name $next_ver $changelog
-        gh_workflow $dry
             if $conventions {
                 try {
                     cd ../Minix-Conventions

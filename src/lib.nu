@@ -35,11 +35,11 @@ export def maybe_dry [cmd: string] {
     if (is_dry) {
         dry $cmd
     } else {
-        nu -c $cmd
         if (is_debug) {
             print $"(ansi yellow_bold)DEBUG: (ansi green)($cmd)"
         }
 
+        do -c { nu -c $cmd }
     }
 }
 
