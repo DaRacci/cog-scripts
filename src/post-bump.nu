@@ -63,6 +63,7 @@ def main [
     --projects (-p): list           # Defines the projects, ("." to represent root).
     --conventions (-c)              # If present updates the version in Minix-Conventions
     --dry (-d)                      # If present, dry runs and prints the commands that would run.
+    --debug (-D)                    # If present, prints the commands are being ran.
 ] {
     with-env [DEBUG $debug DRY $dry] {
         lib version_check $pre_ver $next_ver

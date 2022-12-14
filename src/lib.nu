@@ -16,6 +16,15 @@ export def error [
     }
 }
 
+export def log [cmd: string] {
+    if (is_debug) {
+        print $"(ansi yellow_bold)DEBUG: (ansi green)($cmd)"
+    }
+
+    return (do -i { nu -c $cmd } | complete)
+}
+
+
 export def dry [
     cmd: string,
 ] {
@@ -27,6 +36,10 @@ export def maybe_dry [cmd: string] {
         dry $cmd
     } else {
         nu -c $cmd
+        if (is_debug) {
+            print $"(ansi yellow_bold)DEBUG: (ansi green)($cmd)"
+        }
+
     }
 }
 
